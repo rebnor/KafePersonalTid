@@ -1,0 +1,49 @@
+﻿@model KafePersonalTid.Models.WorkEntry
+
+@{
+    ViewData["Title"] = "Lägg till arbetspass";
+}
+
+<h1>Lägg till arbetspass</h1>
+
+<form asp-action="AddWorkEntry" asp-controller="Employees" method="post">
+
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input type="hidden" asp-for="EmployeeId" />
+
+    <div class="form-group">
+        <label asp-for="Date" class="control-label"></label>
+        <input asp-for="Date" class="form-control" type="date" />
+        <span asp-validation-for="Date" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="StartTime" class="control-label"></label>
+        <input asp-for="StartTime" class="form-control" type="time" value="@(Model.StartTime?.ToString(@"hh\:mm"))" />
+        <span asp-validation-for="StartTime" class="text-danger"></span>
+    </div>
+
+
+    <div class="form-group">
+        <label>Timmar</label>
+        <input type="number" class="form-control" name="Hours" min="0" />
+    </div>
+    <div class="form-group">
+        <label>Minuter</label>
+        <input type="number" class="form-control" name="Minutes" min="0" max="59" />
+    </div>
+
+
+    <div class="form-group mt-3">
+        <input type="submit" value="Spara" class="btn btn-primary" />
+        <a asp-action="DetailedView" asp-route-id="@Model.EmployeeId" class="btn btn-secondary">Tillbaka</a>
+    </div>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

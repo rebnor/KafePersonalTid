@@ -1,0 +1,17 @@
+﻿@model WorkEntry
+
+<h2>Ta bort arbetspass</h2>
+
+<p>Är du säker på att du vill ta bort detta arbetspass?</p>
+
+<ul>
+    <li><strong>Datum:</strong> @Model.Date.ToShortDateString()</li>
+    <li><strong>Starttid:</strong> @(Model.StartTime?.ToString(@"hh\:mm") ?? "–")</li>
+    <li><strong>Arbetstid:</strong> @Model.HoursWorked tim</li>
+</ul>
+
+<form asp-action="DeleteWorkEntry" method="post">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Ja, ta bort</button>
+    <a asp-action="DetailedView" asp-route-id="@Model.EmployeeId" class="btn btn-secondary">Avbryt</a>
+</form>

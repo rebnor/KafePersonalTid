@@ -1,0 +1,31 @@
+﻿@model KafePersonalTid.Models.Employee
+
+@{
+    ViewData["Title"] = "Ta bort anställd";
+}
+
+<h1>Ta bort anställd</h1>
+<h4>Är du säker på att du vill ta bort denna person?</h4>
+<hr />
+<dl class="row">
+    <dt class="col-sm-3">Namn</dt>
+    <dd class="col-sm-9">@Model.Name</dd>
+
+    <dt class="col-sm-3">Personnummer</dt>
+    <dd class="col-sm-9">@Model.PersonalNumber</dd>
+
+    <dt class="col-sm-3">Telefon</dt>
+    <dd class="col-sm-9">@Model.PhoneNumber</dd>
+
+    <dt class="col-sm-3">Adress</dt>
+    <dd class="col-sm-9">@Model.Address</dd>
+
+    <dt class="col-sm-3">Anhörig vid akutfall</dt>
+    <dd class="col-sm-9">@Model.EmergencyContact</dd>
+</dl>
+
+<form asp-action="Delete">
+    <input type="hidden" asp-for="Id" />
+    <input type="submit" value="Ta bort" class="btn btn-danger" /> |
+    <a asp-action="DetailedView" asp-route-id="@Model.Id" class="btn btn-secondary">Avbryt</a>
+</form>

@@ -1,0 +1,67 @@
+﻿@model IEnumerable<dynamic>
+
+@{
+    ViewData["Title"] = "Personalöversikt";
+}
+
+<h1>Personalöversikt</h1>
+
+<table class="table table-bordered table-sm align-middle">
+    <thead class="table-light">
+        <tr>
+            <th>Namn</th>
+            <th>Totalt timmar (vecka)</th>
+            <th>Totalt timmar (månad)</th>
+            <th>Lägg till timmar</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var employee in Model)
+        {
+            <tr>
+                <td>@employee.Name</td>
+                <td>@FormatTime(employee.WeekTotal)</td>
+                <td>@FormatTime(employee.MonthTotal)</td>
+                <td>
+                    <form asp-controller="Employees" asp-action="AddHours" method="post" class="d-flex flex-wrap gap-2 align-items-end inline-form">
+                        <input type="hidden" name="EmployeeId" value="@employee.Id" />
+
+                        <div>
+                            <label class="form-label mb-0" for="Date">Datum</label>
+                            <input type="date" name="Date" class="form-control form-control-sm" required />
+                        </div>
+
+                        <div>
+                            <label class="form-label mb-0" for="Hours">Timmar</label>
+                            <input type="number" name="Hours" class="form-control form-control-sm" step="1" min="0" style="width: 90px;" required />
+                        </div>
+
+                        <div>
+                            <label class="form-label mb-0" for="Minutes">Minuter</label>
+                            <input type="number" name="Minutes" class="form-control form-control-sm" step="5" min="0" max="59" style="width: 70px;" required />
+                        </div>
+
+                        <div>
+                            <button type="submit" class="btn btn-sm btn-primary align-self-end">Spara</button>
+                        </div>
+                    </form>
+                </td>
+                <td>
+                    <a href="@Url.Action("DetailedView", "Employees", new { id = employee.Id })" class="btn btn-info btn-sm">Visa detaljer</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a class="btn btn-success" asp-action="Create">Lägg till ny anställd</a>
+
+@functions {
+    public string FormatTime(double totalHours)
+    {
+        int hours = (int)totalHours;
+        int minutes = (int)((totalHours - hours) * 60);
+        return $"{hours} tim {minutes} min";
+    }
+}

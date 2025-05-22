@@ -1,0 +1,27 @@
+﻿@model WorkEntry
+
+<h2>Redigera arbetspass</h2>
+
+<form asp-action="EditWorkEntry" asp-controller="Employees" method="post">
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="EmployeeId" />
+
+    <div class="form-group">
+        <label asp-for="Date"></label>
+        <input asp-for="Date" class="form-control" type="date" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="StartTime"></label>
+        <input asp-for="StartTime" class="form-control" type="time" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="HoursWorked">Arbetade timmar</label>
+        <input asp-for="HoursWorked" class="form-control" type="number" step="0.01" value="@(Model.HoursWorked.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" />
+        <small class="form-text text-muted">Exempel: 2.5 = 2 timmar 30 minuter</small>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Spara</button>
+    <a asp-action="DetailedView" asp-route-id="@Model.EmployeeId" class="btn btn-secondary">Avbryt</a>
+</form>

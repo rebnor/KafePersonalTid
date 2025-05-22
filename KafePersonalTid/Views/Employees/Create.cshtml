@@ -1,0 +1,46 @@
+﻿@model KafePersonalTid.Models.Employee
+
+@{
+    ViewData["Title"] = "Lägg till anställd";
+}
+
+<h1>Lägg till anställd</h1>
+
+<form asp-action="Create" method="post">
+    <div class="form-group">
+        <label asp-for="Name" class="control-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="HourlyWage"></label>
+        <input asp-for="HourlyWage" class="form-control" type="number" step="0.01" />
+        <span asp-validation-for="HourlyWage" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="PersonalNumber" class="control-label"></label>
+        <input asp-for="PersonalNumber" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="PhoneNumber" class="control-label"></label>
+        <input asp-for="PhoneNumber" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="Address" class="control-label"></label>
+        <input asp-for="Address" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="EmergencyContact" class="control-label"></label>
+        <input asp-for="EmergencyContact" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Skapa</button>
+</form>
+
+<a asp-action="Index" class="btn btn-secondary">Tillbaka</a>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

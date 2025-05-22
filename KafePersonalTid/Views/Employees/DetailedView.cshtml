@@ -1,0 +1,251 @@
+﻿@model EmployeeDetailsViewModel
+
+<div class="container py-5">
+    <h1 class="text-center mb-4 display-5">@Model.Employee.Name – Detaljerad arbetstid</h1>
+
+    @{
+        double totalYearHours = Model.GroupedByMonthAndWeek.Sum(m => m.TotalHours);
+        decimal totalYearSalary = (decimal)totalYearHours * Model.HourlyWage;
+    }
+
+    <!-- Personalinformation -->
+    <div class="card mb-4 shadow">
+        <div class="card-body">
+            <p><i class="bi bi-credit-card"></i> <strong>Personnummer:</strong> @Model.Employee.PersonalNumber</p>
+            <p><i class="bi bi-cash"></i> <strong>Timlön:</strong> @Model.Employee.HourlyWage.ToString("0.00") kr/timme</p>
+            <p><i class="bi bi-telephone"></i> <strong>Telefon:</strong> @Model.Employee.PhoneNumber</p>
+            <p><i class="bi bi-house"></i> <strong>Adress:</strong> @Model.Employee.Address</p>
+            <p><i class="bi bi-person-heart"></i> <strong>Anhörig vid akutfall:</strong> @Model.Employee.EmergencyContact</p>
+        </div>
+    </div>
+
+    <!-- Knappar -->
+    <div class="mb-4 d-flex gap-2 flex-wrap">
+        <a class="btn btn-outline-primary" asp-action="Edit" asp-route-id="@Model.Employee.Id">Redigera</a>
+        <a class="btn btn-outline-danger" asp-action="Delete" asp-route-id="@Model.Employee.Id">Ta bort</a>
+        <a class="btn btn-success" asp-action="AddWorkEntry" asp-route-id="@Model.Employee.Id">Lägg till arbetspass</a>
+    </div>
+
+    <!-- Export till PDF -->
+    <div class="card p-3 mb-4 shadow-sm">
+        <h5 class="fw-bold mb-3">Exportera lönespec</h5>
+        <form method="get" asp-action="ExportToPdf" asp-controller="Employees" class="d-flex gap-3 flex-wrap align-items-end">
+            <input type="hidden" name="id" value="@Model.Employee.Id" />
+            <input type="hidden" name="year" value="@DateTime.Now.Year" />
+            <div>
+                <label for="month">Månad:</label>
+                <select name="month" class="form-select" style="min-width: 200px;">
+                    <option value="0">Hela året</option>
+                    @foreach (var group in Model.GroupedByMonthAndWeek)
+                    {
+                        <option value="@group.MonthDate.Month">@group.MonthName</option>
+                    }
+                </select>
+            </div>
+            <div class="align-self-end">
+                <button type="submit" class="btn btn-primary">Exportera till PDF</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Filtrering & PDF -->
+    <div class="card p-3 mb-4 shadow-sm">
+        <form method="get" asp-action="DetailedView" asp-controller="Employees" class="d-flex gap-3 flex-wrap align-items-end">
+            <input type="hidden" name="id" value="@Model.Employee.Id" />
+            <div>
+                <label class="form-label fw-bold">Filtrera</label>
+                <div class="d-flex gap-3 flex-wrap">
+                    <div>
+                        <label for="month">Månad:</label>
+                        <select name="month" class="form-select" style="min-width: 200px;">
+                            <option value="0">Hela året</option>
+                            @foreach (var group in Model.GroupedByMonthAndWeek)
+                            {
+                                <option value="@group.MonthDate.Month">@group.MonthName</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label for="year">År:</label>
+                        <input type="number" name="year" value="@DateTime.Now.Year" class="form-control" />
+                    </div>
+                    <div class="align-self-end">
+                        <button type="submit" class="btn btn-secondary">Filtrera</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Om inga pass finns -->
+    @if (!Model.GroupedByMonthAndWeek.Any())
+    {
+        <p class="fst-italic">Inga arbetspass registrerade ännu.</p>
+    }
+    else
+    {
+        <!-- Total års-summering -->
+        <div class="card text-white bg-info mb-4 shadow">
+            <div class="card-body fs-4">
+                <strong>Totalt för året:</strong> @FormatTime(totalYearHours) – @FormatMoney(totalYearSalary)
+            </div>
+        </div>
+
+        @foreach (var month in Model.GroupedByMonthAndWeek)
+        {
+            var monthId = $"month_{month.MonthDate:yyyyMM}";
+            <div class="card mb-4 shadow">
+                <div class="card-header bg-light" style="cursor:pointer;" onclick="toggleMonth('@monthId', this)">
+                    <h5 class="mb-0"><span class="arrow">▶</span> @month.MonthName – @FormatTime(month.TotalHours) – @FormatMoney((decimal)month.TotalHours * Model.HourlyWage)</h5>
+                </div>
+                <div class="card-body" id="@monthId" style="display:none;">
+                    @foreach (var week in month.Weeks)
+                    {
+                        var weekEnd = week.WeekStart.AddDays(6);
+                        <h6 class="mt-3">
+                            Vecka @week.WeekStart.GetIso8601WeekNumber()
+                            (@week.WeekStart.ToString("d MMMM yyyy", new System.Globalization.CultureInfo("sv-SE"))
+                            – @weekEnd.ToString("d MMMM yyyy", new System.Globalization.CultureInfo("sv-SE")))
+                        </h6>
+
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Datum</th>
+                                    <th>Arbetade timmar</th>
+                                    <th>Lön</th>
+                                    <th>Åtgärder</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var dateGroup in week.Entries.GroupBy(e => e.Date.Date))
+                                {
+                                    var dateId = $"day_{dateGroup.Key:yyyyMMdd}";
+                                    var totalForDay = dateGroup.Sum(e => e.HoursWorked);
+                                    var multipleEntries = dateGroup.Count() > 1;
+
+                                    <tr onclick="toggleDay('@dateId')" style="cursor: @(multipleEntries ? "pointer" : "default")" data-has-multiple="@multipleEntries.ToString().ToLower()">
+                                        <td>
+                                            @if (multipleEntries)
+                                            {
+                                                <span class="arrow" id="arrow_@dateId">▶</span> @dateGroup.Key.ToString("yyyy-MM-dd")
+                                            }
+                                            else
+                                            {
+                                                var entry = dateGroup.First();
+                                                var start = entry.StartTime ?? TimeSpan.Zero;
+                                                var end = start.Add(TimeSpan.FromHours(entry.HoursWorked));
+
+                                                <div>
+                                                    <strong>@dateGroup.Key.ToString("yyyy-MM-dd")</strong><br />
+                                                    <small>@start.ToString(@"hh\:mm") – @end.ToString(@"hh\:mm")</small>
+                                                </div>
+                                            }
+                                        </td>
+                                        <td>@FormatTime(totalForDay)</td>
+                                        <td>@FormatMoney((decimal)totalForDay * Model.HourlyWage)</td>
+                                        <td>
+                                            @if (!multipleEntries)
+                                            {
+                                                var entry = dateGroup.First();
+                                                <a asp-action="EditWorkEntry" asp-route-id="@entry.Id" class="btn btn-sm btn-warning">Redigera</a>
+                                                <a asp-action="DeleteWorkEntry" asp-route-id="@entry.Id" class="btn btn-sm btn-danger">Ta bort</a>
+                                            }
+                                        </td>
+                                    </tr>
+
+                                    @if (multipleEntries)
+                                    {
+                                        <tr id="@dateId" style="display:none; background-color:#f9f9f9;">
+                                            <td colspan="4">
+                                                <table class="table table-sm mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Starttid</th>
+                                                            <th>Sluttid</th>
+                                                            <th>Arbetstid</th>
+                                                            <th>Lön</th>
+                                                            <th>Åtgärder</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach (var entry in dateGroup.OrderBy(e => e.StartTime ?? TimeSpan.Zero))
+                                                        {
+                                                            var start = entry.StartTime ?? TimeSpan.Zero;
+                                                            var end = start.Add(TimeSpan.FromHours(entry.HoursWorked));
+                                                            var pay = (decimal)entry.HoursWorked * Model.HourlyWage;
+
+                                                            <tr>
+                                                                <td>@start.ToString(@"hh\:mm")</td>
+                                                                <td>@end.ToString(@"hh\:mm")</td>
+                                                                <td>@FormatTime(entry.HoursWorked)</td>
+                                                                <td>@FormatMoney(pay)</td>
+                                                                <td>
+                                                                    <a asp-action="EditWorkEntry" asp-route-id="@entry.Id" class="btn btn-sm btn-warning">Redigera</a>
+                                                                    <a asp-action="DeleteWorkEntry" asp-route-id="@entry.Id" class="btn btn-sm btn-danger">Ta bort</a>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function toggleMonth(monthId, header) {
+            var content = document.getElementById(monthId);
+            var arrow = header.querySelector('.arrow');
+            if (content.style.display === "none") {
+                content.style.display = "block";
+                if (arrow) arrow.textContent = "▼";
+            } else {
+                content.style.display = "none";
+                if (arrow) arrow.textContent = "▶";
+            }
+        }
+
+        function toggleDay(dayId) {
+            var row = document.getElementById(dayId);
+            if (!row) return;
+
+            var triggerRow = row.previousElementSibling;
+            var hasMultiple = triggerRow.getAttribute("data-has-multiple") === "true";
+            if (!hasMultiple) return;
+
+            var arrow = document.getElementById('arrow_' + dayId);
+
+            if (row.style.display === "none") {
+                row.style.display = "table-row";
+                if (arrow) arrow.textContent = "▼";
+            } else {
+                row.style.display = "none";
+                if (arrow) arrow.textContent = "▶";
+            }
+        }
+    </script>
+}
+
+@functions {
+    public string FormatTime(double totalHours)
+    {
+        int hours = (int)totalHours;
+        int minutes = (int)((totalHours - hours) * 60);
+        return $"{hours} tim {minutes} min";
+    }
+
+    public string FormatMoney(decimal amount)
+    {
+        return $"{amount:N2} kr";
+    }
+}
